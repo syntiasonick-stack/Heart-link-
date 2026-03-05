@@ -37,8 +37,20 @@ async function loadMessages() {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Call it when page loads
+// Call on page load
 loadMessages();
+
+// ---------------- Real-time subscription ----------------
+supabaseClient
+    .channel('public:messages') // real-time channel for messages
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        const msg = payload.new.text;
+        const newMessage = document.createElement("div");
+        newMessage.textContent = msg;
+        chatBox.appendChild(newMessage);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    })
+    .subscribe();
 
 // ---------------- Send Message ----------------
 async function sendMessage() {
@@ -58,7 +70,7 @@ async function sendMessage() {
     coins--;
     coinDisplay.innerText = coins;
 
-    // Show message in chat box
+    // Show message in chat box instantly
     const newMessage = document.createElement("div");
     newMessage.textContent = message;
     chatBox.appendChild(newMessage);
@@ -73,7 +85,7 @@ async function sendMessage() {
         .insert([{ text: message }]);
 
     if(error){
-        console.error("Error saving message to Supabase:", error);
+        console.error("Error saving message:", error);
         alert("Failed to send message to Supabase.");
     } else {
         console.log("Message saved:", data);
