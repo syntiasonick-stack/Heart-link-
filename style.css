@@ -1,74 +1,145 @@
-body{
-font-family: Arial, Helvetica, sans-serif;
-background:#f2f2f2;
-margin:0;
-padding:0;
+/* ----------------- General ----------------- */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    color: #333;
 }
 
-header{
-background:#ff4d6d;
-color:white;
-text-align:center;
-padding:20px;
-font-size:24px;
+header {
+    background-color: #ff6f61;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
 }
 
-.chat-container{
-width:90%;
-max-width:600px;
-margin:40px auto;
-background:white;
-padding:20px;
-border-radius:10px;
-box-shadow:0 0 10px rgba(0,0,0,0.1);
+header h1 {
+    margin: 0;
+    font-size: 28px;
 }
 
-.coin-balance{
-font-size:18px;
-font-weight:bold;
-margin-bottom:15px;
-text-align:center;
-color:#333;
+header p {
+    margin: 5px 0 0 0;
+    font-size: 14px;
+    color: #f0e6e6;
 }
 
-.chat-box{
-height:300px;
-border:1px solid #ddd;
-border-radius:6px;
-padding:10px;
-overflow-y:scroll;
-background:#fafafa;
+/* ----------------- Containers ----------------- */
+.container {
+    max-width: 700px;
+    margin: 30px auto;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    padding: 20px;
 }
 
-.chat-box div{
-padding:8px;
-margin-bottom:5px;
-background:#ffe5ec;
-border-radius:5px;
+/* ----------------- Coin Balance ----------------- */
+.coin-balance {
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 20px;
 }
 
-.chat-input{
-display:flex;
-margin-top:10px;
+/* ----------------- Chat Box ----------------- */
+.chat-box {
+    border: 1px solid #ddd;
+    height: 250px;
+    overflow-y: auto;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: #fafafa;
+    margin-bottom: 10px;
 }
 
-.chat-input input{
-flex:1;
-padding:10px;
-border:1px solid #ddd;
-border-radius:5px;
+.chat-box div {
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background-color: #fff3f2;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-.chat-input button{
-padding:10px 20px;
-border:none;
-background:#ff4d6d;
-color:white;
-border-radius:5px;
-margin-left:5px;
-cursor:pointer;
+.chat-box div strong {
+    color: #ff6f61;
 }
 
-.chat-input button:hover{
-background:#e63956;
+/* ----------------- Chat Input ----------------- */
+.chat-input, .sell-input {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.chat-input input, .sell-input input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.chat-input button, .sell-input button {
+    padding: 10px 20px;
+    background-color: #ff6f61;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.chat-input button:hover, .sell-input button:hover {
+    background-color: #e65b50;
+}
+
+/* ----------------- Marketplace ----------------- */
+#itemsList {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#itemsList div {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+#itemsList div button {
+    margin-top: 5px;
+}
+
+/* ----------------- Forms ----------------- */
+input[type="email"], input[type="password"], input[type="text"], input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ----------------- Footer ----------------- */
+footer {
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+    margin: 20px 0;
+}
+
+/* ----------------- Responsive ----------------- */
+@media screen and (max-width: 768px) {
+    .container {
+        margin: 20px 15px;
+    }
+
+    .chat-input, .sell-input {
+        flex-direction: column;
+    }
+
+    .chat-input button, .sell-input button {
+        width: 100%;
+    }
 }
