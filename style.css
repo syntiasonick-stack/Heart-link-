@@ -1,0 +1,74 @@
+body{
+font-family: Arial, Helvetica, sans-serif;
+background:#f2f2f2;
+margin:0;
+padding:0;
+}
+
+header{
+background:#ff4d6d;
+color:white;
+text-align:center;
+padding:20px;
+font-size:24px;
+}
+
+.chat-container{
+width:90%;
+max-width:600px;
+margin:40px auto;
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+.coin-balance{
+font-size:18px;
+font-weight:bold;
+margin-bottom:15px;
+text-align:center;
+color:#333;
+}
+
+.chat-box{
+height:300px;
+border:1px solid #ddd;
+border-radius:6px;
+padding:10px;
+overflow-y:scroll;
+background:#fafafa;
+}
+
+.chat-box div{
+padding:8px;
+margin-bottom:5px;
+background:#ffe5ec;
+border-radius:5px;
+}
+
+.chat-input{
+display:flex;
+margin-top:10px;
+}
+
+.chat-input input{
+flex:1;
+padding:10px;
+border:1px solid #ddd;
+border-radius:5px;
+}
+
+.chat-input button{
+padding:10px 20px;
+border:none;
+background:#ff4d6d;
+color:white;
+border-radius:5px;
+margin-left:5px;
+cursor:pointer;
+}
+
+.chat-input button:hover{
+background:#e63956;
+}
