@@ -58,11 +58,15 @@
             cursor: pointer;
         }
     </style>
+
+    <!-- Supabase JS library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
     <header>
         <h1>HeartLink Chat</h1>
     </header>
+
     <div class="chat-container">
         <div class="coin-balance">
             Coins: <span id="coinCount">100</span>
@@ -75,29 +79,8 @@
             <button onclick="sendMessage()">Send</button>
         </div>
     </div>
-    <script>
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const chatBox = document.getElementById('chatBox');
-            const coinCount = document.getElementById('coinCount');
-            if (input.value.trim() !== '') {
-                const newMessage = document.createElement('div');
-                newMessage.textContent = input.value;
-                chatBox.appendChild(newMessage);
-                input.value = '';
-                
-                // Deduct a coin for each message
-                let coins = parseInt(coinCount.textContent, 10);
-                if (coins > 0) {
-                    coins -= 1;
-                    coinCount.textContent = coins;
-                } else {
-                    alert('You have no more coins! Please buy more.');
-                }
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-        }
-    </script>
-<script src="script.js"></script>
+
+    <!-- Your script.js -->
+    <script src="script.js"></script>
 </body>
 </html>
