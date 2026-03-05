@@ -1,34 +1,81 @@
+// ---------------- Supabase Connection ----------------
+const SUPABASE_URL = "https://bbtmkndehvmqxdapyvkk.supabase.co";
+const SUPABASE_KEY = "sb_publishable__8Y7oBonCf3dXBVQVDFCuA_FXYHjht8";
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ---------------- Coins Setup ----------------
 let coins = 20;
 
-function sendMessage(){
-
+// ---------------- Elements ----------------
 const messageInput = document.getElementById("messageInput");
 const chatBox = document.getElementById("chatBox");
 const coinDisplay = document.getElementById("coinCount");
 
-let message = messageInput.value;
-
-if(message === ""){
-alert("Type a message first");
-return;
-}
-
-if(coins <= 0){
-alert("You have no coins left. Buy more coins.");
-return;
-}
-
-coins = coins - 1;
-
+// Display initial coins
 coinDisplay.innerText = coins;
 
-let newMessage = document.createElement("div");
-newMessage.innerText = message;
+// ---------------- Load previous messages ----------------
+async function loadMessages() {
+    const { data, error } = await supabaseClient
+        .from("messages")
+        .select("*")
+        .order("id", { ascending: true });
 
-chatBox.appendChild(newMessage);
+    if(error){
+        console.error("Error loading messages:", error);
+        return;
+    }
 
-messageInput.value = "";
+    chatBox.innerHTML = ""; // clear chat box
+    data.forEach(msg => {
+        const newMessage = document.createElement("div");
+        newMessage.innerText = msg.text;
+        chatBox.appendChild(newMessage);
+    });
 
-chatBox.scrollTop = chatBox.scrollHeight;
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
 
+// Call it when page loads
+loadMessages();
+
+// ---------------- Send Message ----------------
+async function sendMessage() {
+    let message = messageInput.value.trim();
+
+    if(message === ""){
+        alert("Type a message first!");
+        return;
+    }
+
+    if(coins <= 0){
+        alert("You have no coins left. Buy more coins.");
+        return;
+    }
+
+    // Deduct coin
+    coins--;
+    coinDisplay.innerText = coins;
+
+    // Show message in chat box
+    const newMessage = document.createElement("div");
+    newMessage.innerText = message;
+    chatBox.appendChild(newMessage);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Clear input
+    messageInput.value = "";
+
+    // Send message to Supabase
+    const { data, error } = await supabaseClient
+        .from("messages")
+        .insert([{ text: message }]);
+
+    if(error){
+        console.error("Error saving message to Supabase:", error);
+        alert("Failed to send message.");
+    } else {
+        console.log("Message saved to Supabase:", data);
+    }
 }
