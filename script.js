@@ -1,164 +1,60 @@
-// ---------------- Supabase Connection ----------------
-const SUPABASE_URL = "https://bbtmkndehvmqxdapyvkk.supabase.co";
-const SUPABASE_KEY = "sb_publishable__8Y7oBonCf3dXBVQVDFCuA_FXYHjht8";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HeartLink Chat</title>
+<style>
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f9f9f9; }
+header { background:#ff6f61; color:white; padding:20px; text-align:center; }
+.chat-container { max-width:600px; margin:30px auto; background:white; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); padding:20px; }
+.coin-balance { text-align:center; margin-bottom:20px; font-size:18px; font-weight:bold; }
+.chat-box { border:1px solid #ddd; height:300px; overflow-y:scroll; padding:10px; background:#fafafa; border-radius:4px; }
+.chat-input { display:flex; margin-top:10px; }
+.chat-input input { flex:1; padding:10px; border:1px solid #ddd; border-radius:4px; }
+.chat-input button { padding:10px 15px; background:#ff6f61; color:white; border:none; border-radius:4px; cursor:pointer; }
+</style>
+</head>
+<body>
+<header><h1>HeartLink Chat</h1></header>
 
-// ---------------- Elements ----------------
-const authContainer = document.getElementById("authContainer");
-const chatContainer = document.getElementById("chatContainer");
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
-const authMessage = document.getElementById("authMessage");
-const messageInput = document.getElementById("messageInput");
-const chatBox = document.getElementById("chatBox");
-const coinDisplay = document.getElementById("coinCount");
+<div class="chat-container">
+  <div class="coin-balance">Coins: <span id="coinCount">100</span></div>
+  <div class="chat-box" id="chatBox"></div>
+  <div class="chat-input">
+    <input type="text" id="messageInput" placeholder="Type your message...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
 
-// ---------------- Coins Setup ----------------
+<script>
 let coins = 100;
-coinDisplay.innerText = coins;
 
-// ---------------- User state ----------------
-let currentUser = null;
+function sendMessage() {
+  const input = document.getElementById("messageInput");
+  const chatBox = document.getElementById("chatBox");
+  const coinDisplay = document.getElementById("coinCount");
 
-// ---------------- Sign Up ----------------
-async function signUp() {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
+  if(input.value.trim() === "") {
+    alert("Type a message first!");
+    return;
+  }
 
-    if(!email || !password) {
-        authMessage.textContent = "Please enter email and password.";
-        return;
-    }
+  if(coins <= 0) {
+    alert("You have no coins left. Buy more coins.");
+    return;
+  }
 
-    const { data, error } = await supabaseClient.auth.signUp({
-        email: email,
-        password: password
-    });
+  coins--;
+  coinDisplay.textContent = coins;
 
-    if(error) {
-        authMessage.textContent = error.message;
-    } else {
-        authMessage.textContent = "Sign up successful! Check your email for confirmation.";
-    }
+  const newMessage = document.createElement("div");
+  newMessage.textContent = input.value;
+  chatBox.appendChild(newMessage);
+
+  input.value = "";
+  chatBox.scrollTop = chatBox.scrollHeight;
 }
-
-// ---------------- Sign In ----------------
-async function signIn() {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    if(!email || !password) {
-        authMessage.textContent = "Please enter email and password.";
-        return;
-    }
-
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: email,
-        password: password
-    });
-
-    if(error) {
-        authMessage.textContent = error.message;
-    } else {
-        currentUser = data.user;
-        authMessage.textContent = "Login successful!";
-        authContainer.style.display = "none";
-        chatContainer.style.display = "block";
-        loadUserCoins();
-        loadMessages();
-        subscribeMessages();
-    }
-}
-
-// ---------------- Load User Coins ----------------
-async function loadUserCoins() {
-    // Optional: If you want to store coins in DB, fetch from 'users' table
-    coinDisplay.textContent = coins;
-}
-
-// ---------------- Load Messages ----------------
-async function loadMessages() {
-    if(!currentUser) return;
-
-    const { data, error } = await supabaseClient
-        .from("messages")
-        .select("*")
-        .eq("user_id", currentUser.id)
-        .order("id", { ascending: true });
-
-    if(error){
-        console.error("Error loading messages:", error);
-        return;
-    }
-
-    chatBox.innerHTML = "";
-    data.forEach(msg => {
-        const newMessage = document.createElement("div");
-        newMessage.textContent = msg.text;
-        chatBox.appendChild(newMessage);
-    });
-
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-// ---------------- Real-time Subscription ----------------
-function subscribeMessages() {
-    if(!currentUser) return;
-
-    supabaseClient
-        .channel(`public:messages:user_${currentUser.id}`)
-        .on('postgres_changes', { 
-            event: 'INSERT', 
-            schema: 'public', 
-            table: 'messages', 
-            filter: `user_id=eq.${currentUser.id}` 
-        }, payload => {
-            const newMessage = document.createElement("div");
-            newMessage.textContent = payload.new.text;
-            chatBox.appendChild(newMessage);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        })
-        .subscribe();
-}
-
-// ---------------- Send Message ----------------
-async function sendMessage() {
-    if(!currentUser) return;
-
-    const message = messageInput.value.trim();
-
-    if(message === ""){
-        alert("Type a message first!");
-        return;
-    }
-
-    if(coins <= 0){
-        alert("You have no coins left. Buy more coins.");
-        return;
-    }
-
-    // Deduct 1 coin
-    coins--;
-    coinDisplay.innerText = coins;
-
-    // Show message instantly
-    const newMessage = document.createElement("div");
-    newMessage.textContent = message;
-    chatBox.appendChild(newMessage);
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    // Clear input
-    messageInput.value = "";
-
-    // Insert into Supabase with user_id
-    const { data, error } = await supabaseClient
-        .from("messages")
-        .insert([{ text: message, user_id: currentUser.id }]);
-
-    if(error){
-        console.error("Error saving message:", error);
-        alert("Failed to send message to Supabase.");
-    } else {
-        console.log("Message saved:", data);
-    }
-}
+</script>
+</body>
+</html>
