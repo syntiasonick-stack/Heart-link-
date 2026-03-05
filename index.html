@@ -17,6 +17,9 @@ header { background:#ff6f61; color:white; padding:20px; text-align:center; }
 .auth-container button { padding:10px 15px; background:#ff6f61; color:white; border:none; border-radius:4px; cursor:pointer; margin-right:5px; }
 #authMessage { color:red; margin-top:10px; }
 </style>
+
+<!-- Supabase JS library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
 <header><h1>HeartLink Chat</h1></header>
@@ -26,7 +29,6 @@ header { background:#ff6f61; color:white; padding:20px; text-align:center; }
   <div id="authContainer" class="auth-container">
     <h2>Login / Sign Up</h2>
     <input type="email" id="emailInput" placeholder="Email">
-    <input type="password" id="passwordInput" placeholder="Password">
     <button onclick="signUp()">Sign Up</button>
     <button onclick="signIn()">Login</button>
     <p id="authMessage"></p>
@@ -44,70 +46,123 @@ header { background:#ff6f61; color:white; padding:20px; text-align:center; }
 </div>
 
 <script>
+// ---------------- Supabase setup ----------------
+const SUPABASE_URL = "https://bbtmkndehvmqxdapyvkk.supabase.co";
+const SUPABASE_KEY = "sb_publishable__8Y7oBonCf3dXBVQVDFCuA_FXYHjht8";
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 let currentUser = null;
 let coins = 100;
 
 // ---------------- Sign Up ----------------
-function signUp() {
-  const email = document.getElementById("emailInput").value.trim();
-  if(!email) { document.getElementById("authMessage").textContent = "Enter email"; return; }
+async function signUp() {
+    const email = document.getElementById("emailInput").value.trim();
+    if(!email) { document.getElementById("authMessage").textContent = "Enter email"; return; }
 
-  if(localStorage.getItem(email)) {
-    document.getElementById("authMessage").textContent = "User already exists. Login!";
-    return;
-  }
-
-  const user = { email: email, coins: 100 };
-  localStorage.setItem(email, JSON.stringify(user));
-  document.getElementById("authMessage").textContent = "Sign up successful! Login now.";
+    const { data, error } = await supabase.auth.signUp({ email });
+    if(error){
+        document.getElementById("authMessage").textContent = error.message;
+    } else {
+        document.getElementById("authMessage").textContent = "Sign up successful! Check your email to confirm login.";
+    }
 }
 
 // ---------------- Login ----------------
-function signIn() {
-  const email = document.getElementById("emailInput").value.trim();
-  if(!email) { document.getElementById("authMessage").textContent = "Enter email"; return; }
+async function signIn() {
+    const email = document.getElementById("emailInput").value.trim();
+    if(!email) { document.getElementById("authMessage").textContent = "Enter email"; return; }
 
-  const user = JSON.parse(localStorage.getItem(email));
-  if(!user) { document.getElementById("authMessage").textContent = "User not found. Sign up first."; return; }
+    const { data, error } = await supabase.auth.signInWithOtp({ email });
+    if(error){
+        document.getElementById("authMessage").textContent = error.message;
+    } else {
+        document.getElementById("authMessage").textContent = "Check your email for the login link!";
+        // Listen for login
+        supabase.auth.onAuthStateChange(async (event, session) => {
+            if(session && session.user){
+                currentUser = session.user;
+                await loadUserData();
+            }
+        });
+    }
+}
 
-  currentUser = user;
-  coins = currentUser.coins;
+// ---------------- Load user coins ----------------
+async function loadUserData(){
+    // Check if user exists in 'users' table
+    let { data: userRow, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
 
-  document.getElementById("authContainer").style.display = "none";
-  document.querySelector(".chat-container").style.display = "block";
-  document.getElementById("coinCount").textContent = coins;
-  document.getElementById("authMessage").textContent = "";
+    if(!userRow){
+        // If not, create with 100 coins
+        await supabase.from('users').insert([{ id: currentUser.id, email: currentUser.email, coins: 100 }]);
+        coins = 100;
+    } else {
+        coins = userRow.coins;
+    }
+
+    document.getElementById("coinCount").textContent = coins;
+    document.getElementById("authContainer").style.display = "none";
+    document.querySelector(".chat-container").style.display = "block";
+
+    loadMessages();
+}
+
+// ---------------- Load messages ----------------
+async function loadMessages(){
+    const { data: messages, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: true });
+
+    const chatBox = document.getElementById("chatBox");
+    chatBox.innerHTML = '';
+    messages.forEach(msg => {
+        const div = document.createElement("div");
+        div.textContent = msg.text;
+        chatBox.appendChild(div);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 // ---------------- Send Message ----------------
-function sendMessage() {
-  const input = document.getElementById("messageInput");
-  const chatBox = document.getElementById("chatBox");
-  const coinDisplay = document.getElementById("coinCount");
+async function sendMessage(){
+    const input = document.getElementById("messageInput");
+    const chatBox = document.getElementById("chatBox");
+    const coinDisplay = document.getElementById("coinCount");
 
-  if(input.value.trim() === "") {
-    alert("Type a message first!");
-    return;
-  }
+    if(input.value.trim() === ""){
+        alert("Type a message first!");
+        return;
+    }
 
-  if(coins <= 0) {
-    alert("You have no coins left. Buy more coins.");
-    return;
-  }
+    if(coins <= 0){
+        alert("You have no coins left. Buy more coins.");
+        return;
+    }
 
-  coins--;
-  coinDisplay.textContent = coins;
+    // Deduct coin
+    coins--;
+    coinDisplay.textContent = coins;
 
-  // Save coins for this user
-  currentUser.coins = coins;
-  localStorage.setItem(currentUser.email, JSON.stringify(currentUser));
+    // Insert message into Supabase
+    const { data, error } = await supabase.from('messages').insert([
+        { text: input.value, user_id: currentUser.id }
+    ]);
 
-  const newMessage = document.createElement("div");
-  newMessage.textContent = input.value;
-  chatBox.appendChild(newMessage);
+    // Update coins in users table
+    await supabase.from('users').update({ coins }).eq('id', currentUser.id);
 
-  input.value = "";
-  chatBox.scrollTop = chatBox.scrollHeight;
+    const newMessage = document.createElement("div");
+    newMessage.textContent = input.value;
+    chatBox.appendChild(newMessage);
+
+    input.value = '';
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 </script>
 </body>
