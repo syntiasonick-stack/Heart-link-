@@ -3,167 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HeartLink Chat</title>
+<title>HeartLink Chat & Marketplace</title>
 <style>
 body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f9f9f9; }
 header { background:#ff6f61; color:white; padding:20px; text-align:center; }
-.container { max-width:600px; margin:30px auto; background:white; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); padding:20px; }
-.coin-balance { text-align:center; margin-bottom:20px; font-size:18px; font-weight:bold; }
-.chat-box { border:1px solid #ddd; height:300px; overflow-y:scroll; padding:10px; background:#fafafa; border-radius:4px; margin-bottom:10px; }
-.chat-input { display:flex; margin-top:10px; }
-.chat-input input { flex:1; padding:10px; border:1px solid #ddd; border-radius:4px; }
-.chat-input button { padding:10px 15px; background:#ff6f61; color:white; border:none; border-radius:4px; cursor:pointer; margin-left:5px; }
-.auth-container input { width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px; }
-.auth-container button { padding:10px 15px; background:#ff6f61; color:white; border:none; border-radius:4px; cursor:pointer; margin-right:5px; }
-#authMessage { color:red; margin-top:10px; }
+header p { font-size:14px; margin-top:5px; }
+.container { max-width:600px; margin:30px auto; background:white; border-radius:8px; padding:20px; }
+.chat-box, #itemsList { border:1px solid #ddd; height:200px; overflow-y:scroll; padding:10px; background:#fafafa; border-radius:4px; margin-bottom:10px; }
+.chat-input, .sell-input { display:flex; margin-top:10px; }
+.chat-input input, .sell-input input { flex:1; padding:10px; border:1px solid #ddd; border-radius:4px; margin-right:5px; }
+.chat-input button, .sell-input button { padding:10px 15px; background-color:#ff6f61; color:white; border:none; border-radius:4px; cursor:pointer; }
+footer { text-align:center; margin:20px 0; font-size:12px; color:#888; }
 </style>
 
 <!-- Supabase JS library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
-<header><h1>HeartLink Chat</h1></header>
 
-<div class="container">
-  <!-- Login / Sign-Up Form -->
-  <div id="authContainer" class="auth-container">
-    <h2>Login / Sign Up</h2>
-    <input type="email" id="emailInput" placeholder="Email">
-    <button onclick="signUp()">Sign Up</button>
-    <button onclick="signIn()">Login</button>
-    <p id="authMessage"></p>
+<header>
+  <h1>HeartLink Chat & Marketplace</h1>
+  <p>Owned and developed by Omotayo Fanegan</p>
+</header>
+
+<div class="container" id="authContainer">
+  <h2>Login / Sign Up</h2>
+  <input type="email" id="emailInput" placeholder="Email">
+  <input type="password" id="passwordInput" placeholder="Password">
+  <button onclick="signIn()">Sign In</button>
+  <button onclick="signUp()">Sign Up</button>
+  <p id="authMessage" style="color:red;"></p>
+</div>
+
+<div class="container" id="chatContainer" style="display:none;">
+  <div class="coin-balance">Coins: <span id="coinCount">0</span></div>
+
+  <h3>Chat</h3>
+  <div class="chat-box" id="chatBox"></div>
+  <div class="chat-input">
+    <input type="text" id="messageInput" placeholder="Type your message...">
+    <button onclick="sendMessage()">Send</button>
   </div>
 
-  <!-- Chat Container -->
-  <div class="chat-container" style="display:none;">
-    <div class="coin-balance">Coins: <span id="coinCount">100</span></div>
-    <div class="chat-box" id="chatBox"></div>
-    <div class="chat-input">
-      <input type="text" id="messageInput" placeholder="Type your message...">
-      <button onclick="sendMessage()">Send</button>
-    </div>
+  <h3>Marketplace</h3>
+  <div id="itemsList"></div>
+  <div class="sell-input">
+    <input type="text" id="itemName" placeholder="Item Name">
+    <input type="text" id="itemDesc" placeholder="Description">
+    <input type="number" id="itemPrice" placeholder="Price in coins">
+    <button onclick="sellItem()">List Item</button>
   </div>
 </div>
 
-<script>
-// ---------------- Supabase setup ----------------
-const SUPABASE_URL = "https://bbtmkndehvmqxdapyvkk.supabase.co";
-const SUPABASE_KEY = "sb_publishable__8Y7oBonCf3dXBVQVDFCuA_FXYHjht8";
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<footer>
+  &copy; 2026 Omotayo Fanegan. All rights reserved.
+</footer>
 
-let currentUser = null;
-let coins = 100;
-
-// ---------------- Sign Up ----------------
-async function signUp() {
-    const email = document.getElementById("emailInput").value.trim();
-    if(!email) { document.getElementById("authMessage").textContent = "Enter email"; return; }
-
-    const { data, error } = await supabase.auth.signUp({ email });
-    if(error){
-        document.getElementById("authMessage").textContent = error.message;
-    } else {
-        document.getElementById("authMessage").textContent = "Sign up successful! Check your email to confirm login.";
-    }
-}
-
-// ---------------- Login ----------------
-async function signIn() {
-    const email = document.getElementById("emailInput").value.trim();
-    if(!email) { document.getElementById("authMessage").textContent = "Enter email"; return; }
-
-    const { data, error } = await supabase.auth.signInWithOtp({ email });
-    if(error){
-        document.getElementById("authMessage").textContent = error.message;
-    } else {
-        document.getElementById("authMessage").textContent = "Check your email for the login link!";
-        // Listen for login
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            if(session && session.user){
-                currentUser = session.user;
-                await loadUserData();
-            }
-        });
-    }
-}
-
-// ---------------- Load user coins ----------------
-async function loadUserData(){
-    // Check if user exists in 'users' table
-    let { data: userRow, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
-
-    if(!userRow){
-        // If not, create with 100 coins
-        await supabase.from('users').insert([{ id: currentUser.id, email: currentUser.email, coins: 100 }]);
-        coins = 100;
-    } else {
-        coins = userRow.coins;
-    }
-
-    document.getElementById("coinCount").textContent = coins;
-    document.getElementById("authContainer").style.display = "none";
-    document.querySelector(".chat-container").style.display = "block";
-
-    loadMessages();
-}
-
-// ---------------- Load messages ----------------
-async function loadMessages(){
-    const { data: messages, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: true });
-
-    const chatBox = document.getElementById("chatBox");
-    chatBox.innerHTML = '';
-    messages.forEach(msg => {
-        const div = document.createElement("div");
-        div.textContent = msg.text;
-        chatBox.appendChild(div);
-    });
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-// ---------------- Send Message ----------------
-async function sendMessage(){
-    const input = document.getElementById("messageInput");
-    const chatBox = document.getElementById("chatBox");
-    const coinDisplay = document.getElementById("coinCount");
-
-    if(input.value.trim() === ""){
-        alert("Type a message first!");
-        return;
-    }
-
-    if(coins <= 0){
-        alert("You have no coins left. Buy more coins.");
-        return;
-    }
-
-    // Deduct coin
-    coins--;
-    coinDisplay.textContent = coins;
-
-    // Insert message into Supabase
-    const { data, error } = await supabase.from('messages').insert([
-        { text: input.value, user_id: currentUser.id }
-    ]);
-
-    // Update coins in users table
-    await supabase.from('users').update({ coins }).eq('id', currentUser.id);
-
-    const newMessage = document.createElement("div");
-    newMessage.textContent = input.value;
-    chatBox.appendChild(newMessage);
-
-    input.value = '';
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
-</script>
+<script src="script.js"></script>
 </body>
 </html>
