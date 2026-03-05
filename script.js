@@ -5,7 +5,7 @@ const SUPABASE_KEY = "sb_publishable__8Y7oBonCf3dXBVQVDFCuA_FXYHjht8";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ---------------- Coins Setup ----------------
-let coins = 20;
+let coins = 100;
 
 // ---------------- Elements ----------------
 const messageInput = document.getElementById("messageInput");
@@ -30,7 +30,7 @@ async function loadMessages() {
     chatBox.innerHTML = ""; // clear chat box
     data.forEach(msg => {
         const newMessage = document.createElement("div");
-        newMessage.innerText = msg.text;
+        newMessage.textContent = msg.text;
         chatBox.appendChild(newMessage);
     });
 
@@ -42,7 +42,7 @@ loadMessages();
 
 // ---------------- Send Message ----------------
 async function sendMessage() {
-    let message = messageInput.value.trim();
+    const message = messageInput.value.trim();
 
     if(message === ""){
         alert("Type a message first!");
@@ -54,13 +54,13 @@ async function sendMessage() {
         return;
     }
 
-    // Deduct coin
+    // Deduct 1 coin
     coins--;
     coinDisplay.innerText = coins;
 
     // Show message in chat box
     const newMessage = document.createElement("div");
-    newMessage.innerText = message;
+    newMessage.textContent = message;
     chatBox.appendChild(newMessage);
     chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -74,8 +74,8 @@ async function sendMessage() {
 
     if(error){
         console.error("Error saving message to Supabase:", error);
-        alert("Failed to send message.");
+        alert("Failed to send message to Supabase.");
     } else {
-        console.log("Message saved to Supabase:", data);
+        console.log("Message saved:", data);
     }
 }
